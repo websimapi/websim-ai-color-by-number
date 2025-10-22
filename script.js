@@ -29,6 +29,16 @@ let isPanning = false;
 let startPan = { x: 0, y: 0 };
 let lastPinchDist = 0;
 
+function getDisplayId(numericId) {
+    if (numericId >= 1 && numericId <= 10) {
+        return String(numericId - 1);
+    }
+    if (numericId > 10) {
+        return String.fromCharCode('A'.charCodeAt(0) + numericId - 11);
+    }
+    return ''; // for id 0 or other cases
+}
+
 promptForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const prompt = promptInput.value.trim();
@@ -119,7 +129,8 @@ function processImage(img) {
     }
 
     if (hasOtherCategory) {
-        colorMap.set('other', { id: MAX_COLORS, count: 0 });
+        // Use colorIdCounter for 'other' to ensure it's the next available ID
+        colorMap.set('other', { id: colorIdCounter, count: 0 });
     }
 
     gridData = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
@@ -192,7 +203,7 @@ function setupPalette() {
         
         const colorIdSpan = document.createElement('span');
         colorIdSpan.className = 'palette-id';
-        colorIdSpan.textContent = id;
+        colorIdSpan.textContent = getDisplayId(id);
         
         item.appendChild(colorSwatch);
         item.appendChild(colorIdSpan);
@@ -254,7 +265,7 @@ function drawGrid() {
                     ctx.font = `${fontSize}px Poppins`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(cellData.id, x * cellSize + cellSize / 2, y * cellSize + cellSize / 2);
+                    ctx.fillText(getDisplayId(cellData.id), x * cellSize + cellSize / 2, y * cellSize + cellSize / 2);
                 }
             }
         }
