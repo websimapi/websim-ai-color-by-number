@@ -52,6 +52,41 @@ header h1 {
     border: 1px solid var(--border-color);
 }
 
+#controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+#difficulty-selector {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+#difficulty-selector label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+#difficulty-selector input[type="radio"] {
+    accent-color: var(--primary-color);
+}
+
+#difficulty-selector label:has(input:checked) {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
 #prompt-form {
     display: flex;
     gap: 0.5rem;
@@ -197,4 +232,3 @@ header h1 {
     font-weight: 600;
     color: var(--completed-color);
 }
-

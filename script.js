@@ -7,7 +7,14 @@ const paletteContainer = document.getElementById('palette');
 const completionMessage = document.getElementById('completion-message');
 const ctx = canvas.getContext('2d');
 
-const GRID_SIZE = 40; // The resolution of our pixel art (e.g., 40x40)
+const difficultySettings = {
+    easy: { gridSize: 20, maxColors: 8 },
+    medium: { gridSize: 30, maxColors: 16 },
+    hard: { gridSize: 50, maxColors: 32 }
+};
+
+let GRID_SIZE = difficultySettings.easy.gridSize;
+let MAX_COLORS = difficultySettings.easy.maxColors;
 
 let gridData = [];
 let colorMap = new Map();
@@ -19,6 +26,10 @@ promptForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const prompt = promptInput.value.trim();
     if (!prompt) return;
+
+    const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+    GRID_SIZE = difficultySettings[selectedDifficulty].gridSize;
+    MAX_COLORS = difficultySettings[selectedDifficulty].maxColors;
     
     resetState();
     loadingOverlay.classList.remove('hidden');
@@ -65,33 +76,85 @@ function processImage(img) {
     offscreenCanvas.width = GRID_SIZE;
     offscreenCanvas.height = GRID_SIZE;
     const offscreenCtx = offscreenCanvas.getContext('2d');
-    
+
     offscreenCtx.drawImage(img, 0, 0, GRID_SIZE, GRID_SIZE);
-    
+
     const imageData = offscreenCtx.getImageData(0, 0, GRID_SIZE, GRID_SIZE);
     const pixels = imageData.data;
+
+    // --- Color Quantization ---
+    const colorCounts = new Map();
+    for (let i = 0; i < pixels.length; i += 4) {
+        // Ignore transparent/white background pixels
+        if (pixels[i+3] < 250 || (pixels[i] > 245 && pixels[i+1] > 245 && pixels[i+2] > 245) ) continue;
+        
+        const colorString = `rgb(${pixels[i]}, ${pixels[i+1]}, ${pixels[i+2]})`;
+        colorCounts.set(colorString, (colorCounts.get(colorString) || 0) + 1);
+    }
     
+    let dominantColors;
+    if (colorCounts.size > MAX_COLORS) {
+        dominantColors = [...colorCounts.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, MAX_COLORS)
+            .map(entry => entry[0]);
+    } else {
+        dominantColors = [...colorCounts.keys()];
+    }
+    
+    const paletteRGB = dominantColors.map(colorStr => {
+        const [r, g, b] = colorStr.match(/\d+/g).map(Number);
+        return { r, g, b };
+    });
+
+    const findClosestColor = (r, g, b) => {
+        let minDistance = Infinity;
+        let closestColor = dominantColors[0];
+        for (let i = 0; i < paletteRGB.length; i++) {
+            const pr = paletteRGB[i].r;
+            const pg = paletteRGB[i].g;
+            const pb = paletteRGB[i].b;
+            const distance = Math.sqrt(Math.pow(r - pr, 2) + Math.pow(g - pg, 2) + Math.pow(b - pb, 2));
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestColor = dominantColors[i];
+            }
+        }
+        return closestColor;
+    };
+    // --- End Color Quantization ---
+
     let colorIdCounter = 1;
     gridData = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
     
+    totalTargetCells = 0;
+
     for (let y = 0; y < GRID_SIZE; y++) {
         for (let x = 0; x < GRID_SIZE; x++) {
             const i = (y * GRID_SIZE + x) * 4;
             const r = pixels[i];
             const g = pixels[i + 1];
             const b = pixels[i + 2];
-            const colorString = `rgb(${r}, ${g}, ${b})`;
+            const a = pixels[i+3];
             
-            if (!colorMap.has(colorString)) {
-                colorMap.set(colorString, { id: colorIdCounter++, count: 0 });
+            // Treat transparent or white pixels as empty background
+            if (a < 250 || (r > 245 && g > 245 && b > 245)) {
+                gridData[y][x] = 0; // 0 for background
+                continue;
             }
-            const colorInfo = colorMap.get(colorString);
+
+            totalTargetCells++;
+            const quantizedColor = findClosestColor(r, g, b);
+            
+            if (!colorMap.has(quantizedColor)) {
+                colorMap.set(quantizedColor, { id: colorIdCounter++, count: 0 });
+            }
+            const colorInfo = colorMap.get(quantizedColor);
             gridData[y][x] = colorInfo.id;
             colorInfo.count++;
         }
     }
     
-    totalTargetCells = GRID_SIZE * GRID_SIZE;
     setupCanvas();
     setupPalette();
     drawGrid();
@@ -156,6 +219,11 @@ function drawGrid() {
                 
                 // Draw number
                 const id = gridData[y][x];
+                if (id === 0) continue; // Don't draw numbers for background cells
+                
+                const color = [...colorMap.keys()].find(key => colorMap.get(key).id === id);
+                if (!color) return;
+
                 ctx.fillStyle = '#aaa';
                 ctx.font = `${Math.max(6, cellSize * 0.5)}px Poppins`;
                 ctx.textAlign = 'center';
@@ -192,6 +260,7 @@ function fillCell(x, y, checkCompletion = true) {
 
 function updatePaletteCompletion(colorId) {
     const colorInfo = [...colorMap.values()].find(info => info.id === colorId);
+    if (!colorInfo) return; // Added check
     let filledCount = 0;
      for (let y = 0; y < GRID_SIZE; y++) {
         for (let x = 0; x < GRID_SIZE; x++) {
@@ -247,4 +316,3 @@ window.addEventListener('resize', () => {
     setupCanvas();
     drawGrid();
 });
-
