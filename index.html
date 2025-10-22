@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AI Color by Number</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <h1>AI Color by Number</h1>
+            <p>Enter a prompt, generate art, and color it in!</p>
+        </header>
+
+        <div id="controls" class="card">
+            <form id="prompt-form">
+                <input type="text" id="prompt-input" placeholder="e.g., a cute cat wearing a wizard hat" required>
+                <button type="submit" id="generate-btn">Generate</button>
+            </form>
+        </div>
+
+        <div id="loading-overlay" class="hidden">
+            <div class="spinner"></div>
+            <p>Generating your masterpiece...</p>
+        </div>
+
+        <main id="game-area" class="hidden">
+            <div id="canvas-container" class="card">
+                <canvas id="color-canvas"></canvas>
+            </div>
+            <div id="palette-container" class="card">
+                <h2>Color Palette</h2>
+                <div id="palette"></div>
+                <div id="completion-message" class="hidden">
+                    🎉 You did it! 🎉
+                </div>
+            </div>
+        </main>
+
+    </div>
+    <script src="script.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
+
